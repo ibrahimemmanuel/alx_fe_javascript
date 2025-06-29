@@ -119,79 +119,58 @@ if (sessionStorage.getItem("lastQuote")) {
 }
 
 // Optional Task 3 Simulation Placeholder (To be implemented later)
-// =====================
-// Task 3: Server Sync & Conflict Handling
-// =====================
+// === Task 3: Server Sync Logic ===
 
-const SERVER_URL = 'https://jsonplaceholder.typicode.com/posts'; // Mock API
+async function fetchQuotesFromServer() {
+  try {
+    const res = await fetch("https://jsonplaceholder.typicode.com/posts");
+    const data = await res.json();
+    const serverQuotes = data.slice(0, 5).map(post => ({ text: post.title, category: "Server" }));
+    return serverQuotes;
+  } catch (err) {
+    console.error("Failed to fetch from server", err);
+    return [];
+  }
+}
 
-// Fetch quotes from server
-function fetchQuotesFromServer() {
-  return fetch(SERVER_URL)
-    .then((response) => response.json())
-    .then((data) => {
-      const serverQuotes = data.slice(0, 5).map((item) => ({
-        text: item.title,
-        category: 'Server',
-      }));
-      return serverQuotes;
-    })
-    .catch((err) => {
-      console.error('Error fetching from server:', err);
-      return [];
+async function postQuoteToServer(quote) {
+  try {
+    await fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(quote)
     });
+    console.log("Quote posted to server");
+  } catch (err) {
+    console.error("Failed to post quote", err);
+  }
 }
 
-// Post a new quote to the server
-function postQuoteToServer(quote) {
-  return fetch(SERVER_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(quote),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log('Quote posted to server:', data);
-    })
-    .catch((err) => console.error('Error posting to server:', err));
-}
-
-// Sync local with server and handle conflicts
-function syncQuotes() {
-  fetchQuotesFromServer().then((serverQuotes) => {
-    let localQuotes = JSON.parse(localStorage.getItem('quotes')) || [];
-
-    // Simple conflict resolution: Server wins
-    const merged = [...serverQuotes, ...localQuotes.filter((lq) => !serverQuotes.some((sq) => sq.text === lq.text))];
-
-    quotes = merged;
-    saveQuotes();
-    displayRandomQuote();
-    updateStatus('Quotes synced with server.');
+async function syncQuotes() {
+  const serverQuotes = await fetchQuotesFromServer();
+  const combined = [...quotes, ...serverQuotes];
+  const unique = [];
+  const seen = new Set();
+  combined.forEach(q => {
+    const key = `${q.text}-${q.category}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(q);
+    }
   });
+  quotes = unique;
+  saveQuotes();
+  populateCategories();
+  alert("Quotes synced with server!");
 }
 
-// Periodically sync every 30s
+// === Event listeners ===
+newQuoteBtn.addEventListener("click", showRandomQuote);
+document.getElementById("addQuoteBtn").addEventListener("click", addQuote);
+categoryFilter.addEventListener("change", filterQuotes);
+
+// === Initial setup ===
+populateCategories();
+showRandomQuote();
+syncQuotes();
 setInterval(syncQuotes, 30000);
-
-// Add visual notification for sync status
-const statusDiv = document.createElement('div');
-statusDiv.id = 'syncStatus';
-statusDiv.style.position = 'fixed';
-statusDiv.style.bottom = '10px';
-statusDiv.style.right = '10px';
-statusDiv.style.padding = '8px 12px';
-statusDiv.style.backgroundColor = '#333';
-statusDiv.style.color = '#fff';
-statusDiv.style.fontSize = '14px';
-statusDiv.style.borderRadius = '5px';
-document.body.appendChild(statusDiv);
-
-function updateStatus(msg) {
-  statusDiv.textContent = msg;
-  setTimeout(() => {
-    statusDiv.textContent = '';
-  }, 5000);
-}
