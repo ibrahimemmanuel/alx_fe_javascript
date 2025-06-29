@@ -119,3 +119,79 @@ if (sessionStorage.getItem("lastQuote")) {
 }
 
 // Optional Task 3 Simulation Placeholder (To be implemented later)
+// =====================
+// Task 3: Server Sync & Conflict Handling
+// =====================
+
+const SERVER_URL = 'https://jsonplaceholder.typicode.com/posts'; // Mock API
+
+// Fetch quotes from server
+function fetchQuotesFromServer() {
+  return fetch(SERVER_URL)
+    .then((response) => response.json())
+    .then((data) => {
+      const serverQuotes = data.slice(0, 5).map((item) => ({
+        text: item.title,
+        category: 'Server',
+      }));
+      return serverQuotes;
+    })
+    .catch((err) => {
+      console.error('Error fetching from server:', err);
+      return [];
+    });
+}
+
+// Post a new quote to the server
+function postQuoteToServer(quote) {
+  return fetch(SERVER_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(quote),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log('Quote posted to server:', data);
+    })
+    .catch((err) => console.error('Error posting to server:', err));
+}
+
+// Sync local with server and handle conflicts
+function syncQuotes() {
+  fetchQuotesFromServer().then((serverQuotes) => {
+    let localQuotes = JSON.parse(localStorage.getItem('quotes')) || [];
+
+    // Simple conflict resolution: Server wins
+    const merged = [...serverQuotes, ...localQuotes.filter((lq) => !serverQuotes.some((sq) => sq.text === lq.text))];
+
+    quotes = merged;
+    saveQuotes();
+    displayRandomQuote();
+    updateStatus('Quotes synced with server.');
+  });
+}
+
+// Periodically sync every 30s
+setInterval(syncQuotes, 30000);
+
+// Add visual notification for sync status
+const statusDiv = document.createElement('div');
+statusDiv.id = 'syncStatus';
+statusDiv.style.position = 'fixed';
+statusDiv.style.bottom = '10px';
+statusDiv.style.right = '10px';
+statusDiv.style.padding = '8px 12px';
+statusDiv.style.backgroundColor = '#333';
+statusDiv.style.color = '#fff';
+statusDiv.style.fontSize = '14px';
+statusDiv.style.borderRadius = '5px';
+document.body.appendChild(statusDiv);
+
+function updateStatus(msg) {
+  statusDiv.textContent = msg;
+  setTimeout(() => {
+    statusDiv.textContent = '';
+  }, 5000);
+}
