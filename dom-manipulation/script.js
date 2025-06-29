@@ -130,22 +130,36 @@ async function postQuoteToServer(quote) {
 }
 
 async function syncQuotes() {
-  const serverQuotes = await fetchQuotesFromServer();
-  const combined = [...quotes, ...serverQuotes];
-  const unique = [];
-  const seen = new Set();
-  combined.forEach(q => {
-    const key = `${q.text}-${q.category}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(q);
+  try {
+    const serverQuotes = await fetchQuotesFromServer();
+    const combined = [...quotes, ...serverQuotes];
+    const unique = [];
+    const seen = new Set();
+
+    combined.forEach(q => {
+      const key = `${q.text}-${q.category}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(q);
+      }
+    });
+
+    const oldLength = quotes.length;
+    quotes = unique;
+    saveQuotes();
+    populateCategories();
+
+    if (quotes.length > oldLength) {
+      showNotification("Quotes synced: new quotes added from server!");
+    } else {
+      showNotification("Quotes synced: no new updates.");
     }
-  });
-  quotes = unique;
-  saveQuotes();
-  populateCategories();
-  showNotification("Quotes synced with server!");
+  } catch (error) {
+    showNotification("Failed to sync with server.", true);
+    console.error("Sync error:", error);
+  }
 }
+
 
 // === Required by checker ===
 function createAddQuoteForm() {
