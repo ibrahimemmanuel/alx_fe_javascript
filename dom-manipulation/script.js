@@ -1,30 +1,37 @@
+// Initial quotes array
 const quotes = [
-  { text: "Stay hungry, stay foolish.", category: "Inspiration" },
-  { text: "Code is like humor. When you have to explain it, it’s bad.", category: "Programming" }
+  { text: "Stay hungry, stay foolish.", category: "Motivation" },
+  { text: "Simplicity is the soul of efficiency.", category: "Work" },
+  { text: "Talk is cheap. Show me the code.", category: "Programming" }
 ];
 
-function showRandomQuote() {
+// Function to display a random quote
+function displayRandomQuote() {
   const quoteDisplay = document.getElementById("quoteDisplay");
-  const random = quotes[Math.floor(Math.random() * quotes.length)];
-  quoteDisplay.textContent = `"${random.text}" - (${random.category})`;
+  const randomIndex = Math.floor(Math.random() * quotes.length);
+  const quote = quotes[randomIndex];
+  quoteDisplay.textContent = `"${quote.text}" - (${quote.category})`;
 }
 
+// Function to add a new quote to the array and update DOM
 function addQuote() {
-  const textInput = document.getElementById("newQuoteText");
-  const categoryInput = document.getElementById("newQuoteCategory");
+  const quoteText = document.getElementById("newQuoteText").value.trim();
+  const quoteCategory = document.getElementById("newQuoteCategory").value.trim();
 
-  const text = textInput.value.trim();
-  const category = categoryInput.value.trim();
-
-  if (text && category) {
-    quotes.push({ text, category });
-    textInput.value = "";
-    categoryInput.value = "";
-    alert("Quote added!");
+  if (quoteText && quoteCategory) {
+    const newQuote = { text: quoteText, category: quoteCategory };
+    quotes.push(newQuote);
+    document.getElementById("newQuoteText").value = "";
+    document.getElementById("newQuoteCategory").value = "";
+    displayRandomQuote();
   }
 }
 
-// ✅ Ensure the event listener is attached AFTER DOM is loaded
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("newQuote").addEventListener("click", showRandomQuote);
+// Event listeners
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("newQuote").addEventListener("click", displayRandomQuote);
+  document.getElementById("addQuoteBtn").addEventListener("click", addQuote);
+
+  // Display an initial quote on load
+  displayRandomQuote();
 });
